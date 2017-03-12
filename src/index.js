@@ -13,15 +13,15 @@ export default class Router {
 	_history = []
 	@observable _currentRoute = {}
 
-	// @computed get getCurrentRoute(path) {
-	// getCurrentRoute = (path, caller) => {
-	getCurrentRoute = (path) => {
-		// console.debug("Router/getCurrentRoute()", path, this._currentRoute.path, caller)
+	//getCurrentRoute = path => {
+	currentRoute = path => computed(() => {
+		// console.debug("Router/currentRoute()", path, this._currentRoute.path)
 		const current = this._currentRoute.path
 		if(!path) return current
 		if(current.indexOf(path) === -1 ) return null
 		return current.replace(path, "").split("/").filter(p => p)[0]
-	}
+	//}
+	})
 
 	constructor(routesDefs = {}, {defaultRoute, defaultFallback} = {}) {
 		// const self = this
@@ -31,7 +31,7 @@ export default class Router {
 			const options = routesDefs[path]
 			let { component, props = {}, condition, fallback } = options || {}
 			if(typeof options !== 'object') component = options
-			if(!component || component === null) component = () => this.getCurrentSubView(path)
+			if(!component || component === null) component = () => this.currentSubView(path).get()
 
 			setDescendantProp(this._views, `/${path}`, {
 				__component: component,
@@ -44,28 +44,32 @@ export default class Router {
 		this._defaultFallback = defaultFallback
 		// console.log("Router/constructor()", this._views)
 	}
-	@action('ROUTE_SET') go = (path, props) => {
+
+	@action('ROUTE_SET') go(path, props) {
 		if(this._currentRoute.path === path && objectsEqual(this._currentRoute.props, props) ) return
 		// console.debug("Router/go()", path, props)
 		if(!this._currentRoute.props || !this._currentRoute.props._doNotTrack) this._history.push(this._currentRoute)
 		this._currentRoute = { path, props }
 	}
-	@action('ROUTE_SET-DEFAULT') _setDefaultRoute = (path, props) => {
+
+	@action('ROUTE_SET-DEFAULT') _setDefaultRoute(path, props) {
 		// console.log("ROUTE_SET-DEFAULT", path, props)
 		if(!path) return
 		this._defaultRoute = path
 		this._currentRoute = { path, props }
 	}
-	@action('ROUTE_BACK') goBack = (changeTop = false) => {
+
+	@action('ROUTE_BACK') goBack(changeTop = false) {
 		// console.debug("Router/back()", changeTop)
-		const initialTop = this.getCurrentRoute('/', 'Router/goBack')
+		const initialTop = this.currentRoute('/').get()
 		if(this._history.length) do {
 			this._currentRoute = this._history[this._history.length - 1]
 			this._history.pop()
-		} while(this._history.length && changeTop && this.getCurrentRoute('/', 'Router/goBack') === initialTop)
+		} while(this._history.length && changeTop && this.currentRoute('/').get() === initialTop)
 		return true
 	}
-	getView = (path, props = {}, asComponent = false) => {
+
+	getView(path, props = {}, asComponent = false) {
 		// TODO: Support parameterized paths: /some/:param/:other_param/path
 		// console.log("getView()", path, props)
 		if(!path) return null
@@ -83,7 +87,8 @@ export default class Router {
 			  )
 			: this.getView(obj.__fallback || this._defaultFallback, { _doNotTrack: true }, asComponent)
 	}
-	getSubViews = path => {
+
+	getSubViews(path) {
 		// console.log("getSubViews:", path)
 		const routeDef = getDescendantProp(this._views, path, "/")
 		// console.log("getSubViews:", routeDef)
@@ -95,13 +100,14 @@ export default class Router {
 				{ ...this._currentRoute.props, ...routeDef[key].__props, key }
 			))
 	}
-	getCurrentSubView = (path, props = {}, asComponent = false) => {
-		// console.log("getCurrentSubView()", path, props, this._currentRoute.path)
-		const key = this.getCurrentRoute(path, 'Router/getCurrentSubView')
-		// console.log("getCurrentSubView() key", key)
+
+	currentSubView = (path, props = {}, asComponent = false) => computed(() => {
+		// console.debug("Router/currentSubView()", path, props, this._currentRoute.path)
+		const key = this.currentRoute(path).get()
+		// console.log("currentSubView() key", key)
 		if(!key) return null
 		return this.getView(`${path}/${key}`, { ...this._currentRoute.props, ...props }, asComponent)
-	}
+	})
 	// getCurrentViewByLevel =  (level = 1, props = {} ) => {
 	// 	const pathParts = this._currentRoute.path.split("/").filter(p => p).splice(0, level)
 	// 	if(pathParts.length < level) return null

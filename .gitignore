@@ -1,6 +1,7 @@
 /node_modules/
 /.c9
 /.idea
+/lib
 .DS_Store
 .*.swp
 
