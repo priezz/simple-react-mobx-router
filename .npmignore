@@ -1,0 +1,10 @@
+/node_modules/
+/.c9
+/.idea
+/src
+/*.png
+/.*
+.DS_Store
+.*.swp
+
+npm-debug.log
