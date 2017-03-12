@@ -11,7 +11,7 @@
   },
   "scripts": {
     "build": "npm install && npm update && babel --stage 0 --optional runtime src --out-dir .",
-    "deploy": "npm run build && && git add . && git commit && git push && npm publish"
+    "deploy": "npm run build && git add . && git commit && git push && npm publish"
   },
   "dependencies": {
     "mobx": "^3.1.5",
